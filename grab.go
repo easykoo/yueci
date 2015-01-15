@@ -47,11 +47,12 @@ func getForms(voc *Voc, doc *goquery.Document) {
 		dom := nodes[0]
 		if dom.FirstChild != nil {
 			form = dom.FirstChild.Data
-			if form != "span" {
+			if strings.HasPrefix(form, "[") {
 				re, _ := regexp.Compile("\\s{1,}")
 				form = re.ReplaceAllString(form, " ")
 				form = strings.Trim(form, "[")
 				form = strings.Trim(form, "]")
+				form = strings.TrimSpace(form)
 				voc.Form += form
 			}
 		}
