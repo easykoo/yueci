@@ -4,6 +4,6 @@ type Voc struct {
 	Spell         string
 	Pronunciation string
 	Translation   string
-	WordForm      string
+	Form          string
 	Sample        string
 }

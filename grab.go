@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"regexp"
 	"strings"
 )
-
-func main() {
-	GetInfo(&Voc{Spell: "Carry"})
-}
 
 func GetInfo(voc *Voc) {
 	url := "http://dict.youdao.com/search?q=" + voc.Spell + "&keyfrom=dict.index"
@@ -18,6 +15,8 @@ func GetInfo(voc *Voc) {
 	}
 	getPronounce(voc, doc)
 	getTranslation(voc, doc)
+	getForms(voc, doc)
+	getSamples(voc, doc)
 	fmt.Println(voc)
 }
 
@@ -26,14 +25,50 @@ func getPronounce(voc *Voc, doc *goquery.Document) {
 		voc.Pronunciation += strings.TrimSpace(s.Nodes[0].FirstChild.Data) + ":"
 		voc.Pronunciation += strings.TrimSpace(s.Find(".phonetic").Text()) + ";"
 	})
+	voc.Pronunciation = strings.TrimSuffix(voc.Pronunciation, ";")
 }
 
 func getTranslation(voc *Voc, doc *goquery.Document) {
-	//form:= doc.Find("p.additional").Nodes
 	liList := doc.Find("ul").Nodes[1]
 	for i := liList.FirstChild.NextSibling; i != nil; i = i.NextSibling {
-		fmt.Println(i.Data)
-		//fmt.Println(i.FirstChild.Data)
+		if i.FirstChild == nil || len(strings.TrimSpace(i.Data)) == 0 || len(strings.TrimSpace(i.FirstChild.Data)) == 0 {
+			continue
+		}
+		voc.Translation += strings.TrimSpace(i.FirstChild.Data) + "|"
 	}
-	//voc.Translation += ul
+
+	voc.Translation = strings.TrimSuffix(voc.Translation, "|")
+}
+
+func getForms(voc *Voc, doc *goquery.Document) {
+	form := ""
+	nodes := doc.Find("p.additional").Nodes
+	if nodes != nil && len(nodes) > 0 {
+		dom := nodes[0]
+		if dom.FirstChild != nil {
+			form = dom.FirstChild.Data
+			if form != "span" {
+				re, _ := regexp.Compile("\\s{1,}")
+				form = re.ReplaceAllString(form, " ")
+				form = strings.Trim(form, "[")
+				form = strings.Trim(form, "]")
+				voc.Form += form
+			}
+		}
+	}
+}
+
+func getSamples(voc *Voc, doc *goquery.Document) {
+	sample := ""
+	doc.Find("#bilingual ul li p").Each(func(i int, s *goquery.Selection) {
+		if !s.HasClass("example-via") {
+			if len(strings.TrimSpace(s.Text())) > 0 {
+				sample += s.Text()
+			}
+		}
+	})
+	re, _ := regexp.Compile("\\s{2,}")
+	sample = re.ReplaceAllString(sample, "|")
+	sample = strings.TrimSuffix(sample, "|")
+	voc.Sample = sample
 }

@@ -3,46 +3,16 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/opesun/goquery"
-	"github.com/tealeg/xlsx"
+	//"github.com/tealeg/xlsx"
 	"io"
 	"os"
 )
 
 var Vocs []*Voc
 
-func main1() {
-	GetInfoFromChaDanCi(&Voc{Spell: "abuse"})
+func main() {
 	Read()
 	Write()
-}
-
-func GetInfoFromChaDanCi(voc *Voc) {
-	var url = "http://www.chadanci.com/s/" + voc.Spell
-	p, err := goquery.ParseUrl(url)
-	if err != nil {
-		panic(err)
-	} else {
-		voc.Pronunciation = p.Find(".trs").Text()
-		//voc.WordForm = p.Find("#dictc_PWDECMEC dl div").Text()
-		wordForm := ""
-		for _, v := range p.Find("#dictc_PWDECMEC dl") {
-			n := goquery.Nodes{v}
-			for _, o := range n.Find("div") {
-				wordForm += goquery.Nodes{o}.Text() + "|"
-			}
-		}
-		voc.WordForm = wordForm
-		sample := ""
-		for _, v := range p.Find("#dictc_xglj dl div ol li.li_sent") {
-			//for _, e := range v.Child {
-			n := goquery.Nodes{v}
-			sample += n.Find(".ee_title").Text() + "|"
-			sample += n.Find("").Last().Text() + "||"
-		}
-		voc.Sample = sample
-		fmt.Println(voc)
-	}
 }
 
 //Read .csv
@@ -79,8 +49,8 @@ func Read() {
 			return
 		}
 		voc.Spell = record[0]
-		voc.Translation = record[1]
-		GetInfoFromChaDanCi(voc)
+		//voc.Translation = record[1]
+		GetInfo(voc)
 		Vocs = append(Vocs, voc)
 	}
 
@@ -98,7 +68,7 @@ func Write() {
 	w := csv.NewWriter(f)
 
 	for _, voc := range Vocs {
-		w.Write([]string{voc.Spell, voc.Pronunciation, voc.Translation, voc.WordForm, voc.Sample})
+		w.Write([]string{voc.Spell, voc.Pronunciation, voc.Translation, voc.Form, voc.Sample})
 	}
 	w.Flush()
 	fmt.Println(len(Vocs))
@@ -109,6 +79,7 @@ func Write() {
 	*/
 }
 
+/*
 //Read .xlsx
 func Read1() {
 	excelFileName := "cet4.xlsx"
@@ -127,17 +98,4 @@ func Read1() {
 	}
 }
 
-/*
-func ExampleScrape() {
-	doc, err := goquery.NewDocument("http://metalsucks.net")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	doc.Find(".reviews-wrap article .review-rhs").Each(func(i int, s *goquery.Selection) {
-		band := s.Find("h3").Text()
-		title := s.Find("i").Text()
-		fmt.Printf("Review %d: %s - %s\n", i, band, title)
-	})
-}
 */
